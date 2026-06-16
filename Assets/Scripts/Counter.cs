@@ -4,31 +4,54 @@ using UnityEngine;
 
 public class Counter : MonoBehaviour
 {
-    [SerializeField] private CounterInputHandler _inputHandler;
+    [SerializeField] private InputReader _inputHandler;
    
     public event Action<int> CounterChanged;
 
+    private Coroutine _counterCoroutine;
+
     private float _delay = 0.5f;
-    private int _startValue = 0;
+    private int _value = 0;
     private int _stepValue = 1;
     
     private void Start()
     {
-        StartCoroutine(Timer(_delay, _startValue, _stepValue));
+        _counterCoroutine = StartCoroutine(Timer());
     }
 
-    private IEnumerator Timer(float delay, int value,int stepValue)
+    private void OnEnable()
     {
-        WaitForSecondsRealtime wait = new WaitForSecondsRealtime(delay);
+        _inputHandler.MouseClicked += ToggleCounter;
+    }
+
+    private void OnDisable()
+    {
+        _inputHandler.MouseClicked -= ToggleCounter;
+    }
+
+    private void ToggleCounter()
+    {
+        if (_counterCoroutine == null)
+        {
+            _counterCoroutine = StartCoroutine(Timer());
+        }
+        else
+        {
+            StopCoroutine(_counterCoroutine);
+
+            _counterCoroutine = null;
+        }
+    }
+
+    private IEnumerator Timer()
+    {
+        WaitForSecondsRealtime wait = new WaitForSecondsRealtime(_delay);
 
         while (true)
         {
-            if (_inputHandler.IsRunningCoroutine == true)
-            {
-                CounterChanged?.Invoke(value);
+            _value += _stepValue;
 
-                value += stepValue;
-            }
+            CounterChanged?.Invoke(_value);
 
             yield return wait;
         }
